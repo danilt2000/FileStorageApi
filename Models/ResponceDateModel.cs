@@ -17,6 +17,7 @@ namespace FileStorageApi.Models
         public class RootResponce
         {
                 public string? Status { get; set; }
+                public string? Tags { get; set; }
                 public string? Password { get; set; }
                 public ResponceDateModel ResponceDateModel { get; set; }
         }

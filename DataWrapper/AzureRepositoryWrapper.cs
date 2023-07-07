@@ -71,10 +71,8 @@ namespace FileStorageApi.DataWrapper
 
                         string password = InitDbFile(files, id, tags, secureByPassword, out FileUrls, out fileGuids, out azureStorageFileTable);
 
-                        //var responce = TableClient.AddEntity(azureStorageFileTable);
                         this.CloudTable.ExecuteAsync(TableOperation.Insert(azureStorageFileTable));
 
-                        //if (!responce.IsError)
                         FileUrls = AddFilesToAzureBlobStorage(files, fileGuids);
 
                         SaveLinksCache(id, FileUrls);
@@ -217,13 +215,11 @@ namespace FileStorageApi.DataWrapper
                                 sasBuilder.SetPermissions(BlobContainerSasPermissions.Read);
 
                                 blobClient.SetHttpHeaders(blobHttpHeaders);
-                                //Uri sasURI = blobClient.GenerateSasUri(sasBuilder);
 
                                 return blobClient.GenerateSasUri(sasBuilder).OriginalString;
                         }
                         else
                         {
-                                // Client object is not authorized via Shared Key
                                 return null;
                         }
                 }
@@ -235,8 +231,6 @@ namespace FileStorageApi.DataWrapper
                         var result = this.CloudTable.ExecuteAsync(retrieveOperation).Result;
 
                         var existingEntity = (StorageFileTable)result.Result;
-
-                        //var entity = TableServiceClient.GetTableClient(ConstTableName).GetEntity<StorageFileTable>(ConstPartitionKey, id.ToString());
 
                         if (existingEntity.Password == null || existingEntity.Password == password)
                                 return true;
@@ -253,8 +247,6 @@ namespace FileStorageApi.DataWrapper
                                 var result = this.CloudTable.ExecuteAsync(retrieveOperation).GetAwaiter().GetResult();
 
                                 var existingEntity = (StorageFileTable)result.Result;
-
-                                //var entity = TableServiceClient.GetTableClient(ConstTableName).GetEntity<StorageFileTable>(ConstPartitionKey, id.ToString());
 
                                 return existingEntity;
                         }
