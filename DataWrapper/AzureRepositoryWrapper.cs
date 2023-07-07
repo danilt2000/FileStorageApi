@@ -177,7 +177,10 @@ namespace FileStorageApi.DataWrapper
 
                                 var existingEntity = (StorageFileTable)result.Result;
 
-                                return true;
+                                if (existingEntity != null)
+                                        return true;
+
+                                return false;
                         }
                         catch (RequestFailedException ex) when (ex.Status == 404)
                         {
@@ -292,66 +295,14 @@ namespace FileStorageApi.DataWrapper
 
                 public (IList<string>? links, string password) UpdateFilesAsync(DateModel dateModel)
                 {
-                        //CloudTableClient cloudTableClient = CloudStorageAccount.CreateCloudTableClient();
-
-                        //CloudTable cloudTable = cloudTableClient.GetTableReference(ConstTableName);
-
-                        //// Retrieve the entity
-                        //string partitionKeyFilter = TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, "File");
-                        //string rowKeyFilter = TableQuery.GenerateFilterCondition("RowKey", QueryComparisons.Equal, "421");
-                        //string combinedFilter = TableQuery.CombineFilters(partitionKeyFilter, TableOperators.And, rowKeyFilter);
-
-                        //CloudTable table = cloudTable; // assume this function returns your CloudTable instance
-
-                        //TableQuery<StorageFileTable> query = new TableQuery<StorageFileTable>().Where(combinedFilter);
-                        //StorageFileTable entity = table.ExecuteQuery(query).FirstOrDefault();
-
-                        //if (entity != null)
-                        //{
-                        //        // Modify the entity
-                        //        entity.FileNamesJson = fileNamesJson;
-                        //        entity.FileGuidsJson = fileGuidsJson;
-                        //        entity.Tags = tag;
-                        //        entity.Password = dateModel.MainDateModel.SecureByPassword.GetValueOrDefault() ? StringHelper.GenerateRandomString(ConstPasswordLength) : null;
-
-                        //        // Save the changes
-                        //        TableOperation updateOperation = TableOperation.Replace(entity);
-                        //        table.Execute(updateOperation);
-                        //}
 
                         var retrieveOperation = TableOperation.Retrieve<StorageFileTable>(ConstPartitionKey, dateModel.Id.ToString());
-
-
 
                         var result = CloudTable.ExecuteAsync(retrieveOperation).Result;
 
                         var entity = (StorageFileTable)result.Result;
 
-
-                        // Execute the retrieve operation.
-                        //TableResult retrievedResult = table.Execute(retrieveOperation);
-
-                        //// Assign the result to a CustomerEntity.
-                        //CustomerEntity updateEntity = (CustomerEntity)retrievedResult.Result;
-
-
-                        //CloudTableClient cloudTableClient = CloudStorageAccount.CreateCloudTableClient();
-
-                        //CloudTable cloudTable = cloudTableClient.GetTableReference(ConstTableName);
-
-
-
-                        //var retrieveOperation = TableOperation.Retrieve(ConstPartitionKey, dateModel.Id.ToString());
-
-                        //var entity = cloudTable.ExecuteAsync(retrieveOperation).GetAwaiter().GetResult();
-                        //var existingEntity = (StorageFileTable)result.Result;
-                        ////var existingEntity = entity;
-                        //_ = this.table.Execute(updateOperation);
-
                         List<string> FileUrls, fileGuids;
-
-
-                        //StorageFileTable entity = TableClient.GetEntity<StorageFileTable>(ConstPartitionKey, dateModel.Id.ToString());
 
                         string fileNamesJson, fileGuidsJson;
 
@@ -374,7 +325,6 @@ namespace FileStorageApi.DataWrapper
                         FileUrls = AddFilesToAzureBlobStorage(dateModel.MainDateModel.Files, fileGuids);
 
                         SaveLinksCache(dateModel.Id, FileUrls);
-
 
                         return (FileUrls, entity.Password);
                 }

@@ -26,23 +26,17 @@ namespace FileStorageApi.Controllers
         {
                 private IFileRepository FileRepository;
 
-                private IMemoryCache MemoryCache;
 
-                public FileStorageController(IFileRepository fileRepository, IMemoryCache memoryCache)
+                public FileStorageController(IFileRepository fileRepository)
                 {
                         FileRepository = fileRepository;
-
-                        MemoryCache = memoryCache;
                 }
 
                 [HttpPost("AddFiles")]
                 public IActionResult Post([FromForm] DateModel data)
                 {
-
-                        if (!FileRepository.IsIdOccupied(data.Id))
-                        {
+                        if (FileRepository.IsIdOccupied(data.Id))
                                 return BadRequest("This ID is not available please try another one");
-                        }
 
                         List<FileResponce> fileResponseUrls = new List<FileResponce>();
 
@@ -70,16 +64,13 @@ namespace FileStorageApi.Controllers
                         };
 
                         return Ok(response);
-
                 }
 
                 [HttpGet("GetData")]
                 public IActionResult Get([FromQuery] int id, [FromQuery] string? password)
                 {
                         if (!FileRepository.IsPasswordValid(id, password))
-                        {
                                 return BadRequest("Not the correct id or password ");
-                        }
 
                         if (FileRepository.IsIdOccupied(id))
                         {
