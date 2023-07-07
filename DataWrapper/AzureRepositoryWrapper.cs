@@ -74,8 +74,8 @@ namespace FileStorageApi.DataWrapper
                         //var responce = TableClient.AddEntity(azureStorageFileTable);
                         this.CloudTable.ExecuteAsync(TableOperation.Insert(azureStorageFileTable));
 
-                        if (!responce.IsError)
-                                FileUrls = AddFilesToAzureBlobStorage(files, fileGuids);
+                        //if (!responce.IsError)
+                        FileUrls = AddFilesToAzureBlobStorage(files, fileGuids);
 
                         SaveLinksCache(id, FileUrls);
 
@@ -146,6 +146,10 @@ namespace FileStorageApi.DataWrapper
                 {
                         List<string> FileUrls = new List<string>();
 
+                        if (files == null)
+                                return FileUrls;
+
+
                         for (int i = 0; i < files.Count; i++)
                         {
                                 var client = BlobContainerClient.GetBlobClient(fileGuids[i]);
@@ -167,7 +171,11 @@ namespace FileStorageApi.DataWrapper
                 {
                         try
                         {
-                                var entity = TableServiceClient.GetTableClient(ConstTableName).GetEntity<StorageFileTable>(ConstPartitionKey, id.ToString());
+                                var retrieveOperation = TableOperation.Retrieve<StorageFileTable>(ConstPartitionKey, id.ToString());
+
+                                var result = this.CloudTable.ExecuteAsync(retrieveOperation).Result;
+
+                                var existingEntity = (StorageFileTable)result.Result;
 
                                 return true;
                         }
@@ -219,9 +227,15 @@ namespace FileStorageApi.DataWrapper
 
                 public bool IsPasswordValid(int id, string password)
                 {
-                        var entity = TableServiceClient.GetTableClient(ConstTableName).GetEntity<StorageFileTable>(ConstPartitionKey, id.ToString());
+                        var retrieveOperation = TableOperation.Retrieve<StorageFileTable>(ConstPartitionKey, id.ToString());
 
-                        if (entity.Value.Password == null || entity.Value.Password == password)
+                        var result = this.CloudTable.ExecuteAsync(retrieveOperation).Result;
+
+                        var existingEntity = (StorageFileTable)result.Result;
+
+                        //var entity = TableServiceClient.GetTableClient(ConstTableName).GetEntity<StorageFileTable>(ConstPartitionKey, id.ToString());
+
+                        if (existingEntity.Password == null || existingEntity.Password == password)
                                 return true;
 
                         return false;
@@ -231,9 +245,15 @@ namespace FileStorageApi.DataWrapper
                 {
                         try
                         {
-                                var entity = TableServiceClient.GetTableClient(ConstTableName).GetEntity<StorageFileTable>(ConstPartitionKey, id.ToString());
+                                var retrieveOperation = TableOperation.Retrieve<StorageFileTable>(ConstPartitionKey, id.ToString());
 
-                                return entity;
+                                var result = this.CloudTable.ExecuteAsync(retrieveOperation).GetAwaiter().GetResult();
+
+                                var existingEntity = (StorageFileTable)result.Result;
+
+                                //var entity = TableServiceClient.GetTableClient(ConstTableName).GetEntity<StorageFileTable>(ConstPartitionKey, id.ToString());
+
+                                return existingEntity;
                         }
                         catch (RequestFailedException ex) when (ex.Status == 404)
                         {
@@ -299,80 +319,62 @@ namespace FileStorageApi.DataWrapper
                         //        table.Execute(updateOperation);
                         //}
 
+                        var retrieveOperation = TableOperation.Retrieve<StorageFileTable>(ConstPartitionKey, dateModel.Id.ToString());
 
 
 
+                        var result = CloudTable.ExecuteAsync(retrieveOperation).Result;
+
+                        var entity = (StorageFileTable)result.Result;
+
+
+                        // Execute the retrieve operation.
+                        //TableResult retrievedResult = table.Execute(retrieveOperation);
+
+                        //// Assign the result to a CustomerEntity.
+                        //CustomerEntity updateEntity = (CustomerEntity)retrievedResult.Result;
+
+
+                        //CloudTableClient cloudTableClient = CloudStorageAccount.CreateCloudTableClient();
+
+                        //CloudTable cloudTable = cloudTableClient.GetTableReference(ConstTableName);
 
 
 
+                        //var retrieveOperation = TableOperation.Retrieve(ConstPartitionKey, dateModel.Id.ToString());
+
+                        //var entity = cloudTable.ExecuteAsync(retrieveOperation).GetAwaiter().GetResult();
+                        //var existingEntity = (StorageFileTable)result.Result;
+                        ////var existingEntity = entity;
+                        //_ = this.table.Execute(updateOperation);
+
+                        List<string> FileUrls, fileGuids;
 
 
+                        //StorageFileTable entity = TableClient.GetEntity<StorageFileTable>(ConstPartitionKey, dateModel.Id.ToString());
 
+                        string fileNamesJson, fileGuidsJson;
 
+                        InitJsonObjects(dateModel.MainDateModel.Files, out FileUrls, out fileGuids, out fileNamesJson, out fileGuidsJson);
 
+                        string tag = ParseTags(dateModel.Tags);
 
+                        entity.FileNamesJson = fileNamesJson;
 
+                        entity.FileGuidsJson = fileGuidsJson;
 
+                        entity.Tags = tag;
 
-                        //var retrieveOperation = TableOperation.Retrieve<StorageFileTable>(ConstPartitionKey, dateModel.Id.ToString());
+                        entity.Password = dateModel.MainDateModel.SecureByPassword.GetValueOrDefault() ? StringHelper.GenerateRandomString(ConstPasswordLength) : null;
 
+                        var updateOperation = TableOperation.Replace(entity);
 
+                        _ = this.CloudTable.ExecuteAsync(updateOperation).Result;
 
-                        //var result = cloudTable.ExecuteAsync(retrieveOperation).GetAwaiter().GetResult();
+                        FileUrls = AddFilesToAzureBlobStorage(dateModel.MainDateModel.Files, fileGuids);
 
-                        //var entity = (StorageFileTable)result.Result;
+                        SaveLinksCache(dateModel.Id, FileUrls);
 
-
-                        //// Execute the retrieve operation.
-                        ////TableResult retrievedResult = table.Execute(retrieveOperation);
-
-                        ////// Assign the result to a CustomerEntity.
-                        ////CustomerEntity updateEntity = (CustomerEntity)retrievedResult.Result;
-
-
-                        ////CloudTableClient cloudTableClient = CloudStorageAccount.CreateCloudTableClient();
-
-                        ////CloudTable cloudTable = cloudTableClient.GetTableReference(ConstTableName);
-
-
-
-                        ////var retrieveOperation = TableOperation.Retrieve(ConstPartitionKey, dateModel.Id.ToString());
-
-                        ////var entity = cloudTable.ExecuteAsync(retrieveOperation).GetAwaiter().GetResult();
-                        ////var existingEntity = (StorageFileTable)result.Result;
-                        //////var existingEntity = entity;
-                        ////_ = this.table.Execute(updateOperation);
-
-                        //List<string> FileUrls, fileGuids;
-
-
-                        ////StorageFileTable entity = TableClient.GetEntity<StorageFileTable>(ConstPartitionKey, dateModel.Id.ToString());
-
-                        //string fileNamesJson, fileGuidsJson;
-
-                        //InitJsonObjects(dateModel.MainDateModel.Files, out FileUrls, out fileGuids, out fileNamesJson, out fileGuidsJson);
-
-                        //string tag = ParseTags(dateModel.Tags);
-
-                        //entity.FileNamesJson = fileNamesJson;
-
-                        //entity.FileGuidsJson = fileGuidsJson;
-
-                        //entity.Tags = tag;
-
-                        //entity.Password = dateModel.MainDateModel.SecureByPassword.GetValueOrDefault() ? StringHelper.GenerateRandomString(ConstPasswordLength) : null;
-
-
-                        ////TableOperation replaceOperation = TableOperation.Replace((Microsoft.WindowsAzure.Storage.Table.ITableEntity)(Azure.Data.Tables.ITableEntity)entity);
-
-                        //////TableOperation replaceOperation = TableOperation.Replace(entity);
-
-                        ////cloudTable.ExecuteAsync(replaceOperation).GetAwaiter().GetResult();
-
-                        ////FileUrls = AddFilesToAzureBlobStorage(dateModel.MainDateModel.Files, fileGuids);
-                        //var updateOperation = TableOperation.Replace(entity);
-
-                        //_ = cloudTable.ExecuteAsync(updateOperation).GetAwaiter().GetResult();
 
                         return (FileUrls, entity.Password);
                 }

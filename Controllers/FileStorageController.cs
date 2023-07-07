@@ -39,19 +39,24 @@ namespace FileStorageApi.Controllers
                 public IActionResult Post([FromForm] DateModel data)
                 {
 
-                        if (FileRepository.IsIdOccupied(data.Id))
+                        if (!FileRepository.IsIdOccupied(data.Id))
                         {
                                 return BadRequest("This ID is not available please try another one");
                         }
 
+                        List<FileResponce> fileResponseUrls = new List<FileResponce>();
+
                         var uploudResult = FileRepository.UploadFiles(data.MainDateModel.Files, data.Id, data.Tags, data.MainDateModel.SecureByPassword ?? false);
 
-                        IList<FileResponce> fileResponseUrls = data.MainDateModel.Files
-                                .Select((file, index) => new FileResponce
-                                {
-                                        FileName = file.FileName,
-                                        FileLink = uploudResult.links[index]
-                                }).ToList();
+                        if (uploudResult.links.Count != 0)
+                        {
+                                fileResponseUrls = data.MainDateModel.Files
+                                       .Select((file, index) => new FileResponce
+                                       {
+                                               FileName = file.FileName,
+                                               FileLink = uploudResult.links[index]
+                                       }).ToList();
+                        }
 
                         var response = new RootResponce
                         {
@@ -80,25 +85,22 @@ namespace FileStorageApi.Controllers
                         {
                                 var entity = FileRepository.GetFiles(id);
 
-                                if (FileRepository.IsPasswordValid(id, password))
+                                IList<FileResponce> fileResponsesUrls = FileRepository.UpdateFilesLinks(entity);
+
+                                var response = new RootResponce
                                 {
-                                        IList<FileResponce> fileResponsesUrls = FileRepository.UpdateFilesLinks(entity);
+                                        Status = "Success",
 
-                                        var response = new RootResponce
+                                        Password = entity.Password,
+
+                                        ResponceDateModel = new ResponceDateModel
                                         {
-                                                Status = "Success",
+                                                Id = id,
+                                                FileResponce = fileResponsesUrls
+                                        }
+                                };
 
-                                                Password = entity.Password,
-
-                                                ResponceDateModel = new ResponceDateModel
-                                                {
-                                                        Id = id,
-                                                        FileResponce = fileResponsesUrls
-                                                }
-                                        };
-
-                                        return Ok(response);
-                                }
+                                return Ok(response);
                         }
 
                         return BadRequest("Not the correct id or password ");
@@ -110,14 +112,19 @@ namespace FileStorageApi.Controllers
                         {
                                 if (FileRepository.IsPasswordValid(data.Id, data.Password))
                                 {
+                                        List<FileResponce> fileResponseUrls = new List<FileResponce>();
+
                                         var result = FileRepository.UpdateFilesAsync(data);
 
-                                        IList<FileResponce> fileResponseUrls = data.MainDateModel.Files
-                                         .Select((file, index) => new FileResponce
-                                         {
-                                                 FileName = file.FileName,
-                                                 FileLink = result.links[index]
-                                         }).ToList();
+                                        if (result.links.Count != 0)
+                                        {
+                                                fileResponseUrls = data.MainDateModel.Files
+                                                         .Select((file, index) => new FileResponce
+                                                         {
+                                                                 FileName = file.FileName,
+                                                                 FileLink = result.links[index]
+                                                         }).ToList();
+                                        }
 
                                         var response = new RootResponce
                                         {
