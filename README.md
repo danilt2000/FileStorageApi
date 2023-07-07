@@ -10,7 +10,7 @@
 <h3 style="white-space: pre-line">
 This task has been completed and at the moment File server is running at link
 </h3>
-<a href="https://filestorageapi20230707045052.azurewebsites.net/swagger/index.html)https://filestorageapi20230707045052.azurewebsites.net/swagger/index.html">File server</a>
+<a href="https://filestorageapi20230707045052.azurewebsites.net/swagger/index.html">File server</a>
 
 
 <h3 style="white-space: pre-line">
